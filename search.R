@@ -28,7 +28,8 @@ REPORT$RECORDING_SESSION_LABEL <- as.character(REPORT$RECORDING_SESSION_LABEL)
 REPORT$RECORDING_SESSION_LABEL[REPORT$RECORDING_SESSION_LABEL == ]
 
 fixItFelix <- function(column,error,correction) {
-  
+  column <- as.character(column)
+  column[column == ]
 }
 
  
