@@ -15,24 +15,27 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 
 # variables and paths
 REPORT <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/SearchFixationReport.txt"                    # the fixation report from dataViewer
+CORRECTIONS <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"              # this is the matrix containing all the errors and all the corrections
 OUTPUT_DIR <- "~/Box/LukeLab/Caffeine/results"                                                     # a path to the output destination
 
 #######################
 # PREPROCESSING STEPS #
 #######################
 
-REPORT <- read.delim(REPORT,header = TRUE, sep = "\t", na.strings = ".")
-
 # fix broken participant labels c14sy, s06co, s09cg, s09co
-REPORT$RECORDING_SESSION_LABEL <- as.character(REPORT$RECORDING_SESSION_LABEL)
-REPORT$RECORDING_SESSION_LABEL[REPORT$RECORDING_SESSION_LABEL == ]
 
-fixItFelix <- function(column,error,correction) {
-  column <- as.character(column)
-  column[column == ]
+  # a function to do it
+fixItFelix <- function(original,corrections) {
+  for (i in 1:length(corrections$V1)) {
+    original[original$V1 == corrections[i,1], ]$V1 = corrections[i,2]
+  }
 }
 
- 
+  # read in the report and a table of corrections
+REPORT <- read.delim(REPORT,header = TRUE, sep = "\t", na.strings = ".")
+CORRECTIONS <- read.table(CORRECTIONS,header = FALSE, sep = "\t", dec = ".")
+
+fixItFelix(REPORT,CORRECTIONS)
 
 
 # parse recording session labels into participantID and treatment condition variable
