@@ -79,10 +79,21 @@ all.the.stats <- merge(all.the.stats,SDSacAmp,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,MeanSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
 
-# AN OVERLY CLEVER ATTEMPT AT AGGREGATION
-# VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-# aggregate the data by subject and session, i.e. compute means and standard deviations for each subject and session
-# wreckit <- by(data = list(original$CURRENT_FIX_DURATION,original$NEXT_SAC_AMPLITUDE,original$NEXT_SAC_PEAK_VELOCITY), INDICES = list(original$SUBJECT,original$CONDITION), FUN = describe)
+# statstical tests
+#   is there a difference between conditions and what does that look like?
+#     fixation duration: anova & box plot
+fix.duration.anova <- aov(fixMean ~ Condition,data=all.the.stats)         # one way anova looking at fixation duration by condition
+summary(fix.duration.anova)                                                       # summary statistics
+boxplot(fixMean~Condition,data=all.the.stats,main="Fixation Duration",xlab="Caffiene Condition",ylab="Fixation Duration (msec)")  # make a boxplot for me to look at.
 
-# convert the list of matrices (aka wreckit) to a single matrix
-# for (i in )
+#LMER
+library(lme4)
+library(lmerTest)
+fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT), data = original)
+summary(fix.dur)
+
+#     saccade amplitude: anova & box plot
+sac.amplitude.anova <- aov(NEXT_SAC_AMPLITUDE ~ CONDITION,data=original)
+summary(sac.amplitude.anova)
+
+# how consistent is everyone across sessions?
