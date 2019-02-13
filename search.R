@@ -40,6 +40,8 @@ original$Subject = as.factor(original$Subject)
 original$RECORDING_SESSION_LABEL <- original$Subject
 original$Subject <- NULL                                                                                # disappear the now redundant subject column
 
+original = original[is.na(original$NEXT_SAC_AMPLITUDE) == FALSE,]                                       # remove rows without saccade information (the NA rows)
+
 # parse recording session labels into participantID and treatment condition variable
 original$SUBJECT <- gsub("s(\\d+)c\\w","\\1", original$RECORDING_SESSION_LABEL)                         # extract subject numbers and create a new subject column and put them in there.
 original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL)                       # now do the same thing for caffeine condition
@@ -48,8 +50,29 @@ original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL
 # MATHS and WIZARDRY #
 ######################
 
+# aggregate the data by subject and session, compute the means and sigma.
+#   fixations
+MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN= mean)
+names(MeanFix) <- c("Subject","Condition","fixMean")
+SDFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
+names(SDFix) <- c("Subject","Condition","fixSD")
+
+#   saccade amplitude
+MeanSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
+names(MeanSacAmp) <- c("Subject","Condition","sacAmpMean")
+
+SDSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
+names(SDSacAmp) <- c("Subject","Condition","sacAmpSD")
+
+#   saccade velocity
+MeanSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
+names(MeanSacVel) <- c("Subject","Condition","sacAvgVelMean")
+
+SDSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
+names(SDSacVel) <- c("Subject","Condition","sacAvgVelSD")
+
 # aggregate the data by subject and session, i.e. compute means and standard deviations for each subject and session
-wreckit <- by(data = list(original$CURRENT_FIX_DURATION,original$NEXT_SAC_AMPLITUDE,original$NEXT_SAC_PEAK_VELOCITY), INDICES = list(original$SUBJECT,original$CONDITION), FUN = describe)
+# wreckit <- by(data = list(original$CURRENT_FIX_DURATION,original$NEXT_SAC_AMPLITUDE,original$NEXT_SAC_PEAK_VELOCITY), INDICES = list(original$SUBJECT,original$CONDITION), FUN = describe)
 
 # convert the list of matrices (aka wreckit) to a single matrix
-for (i in )
+# for (i in )
