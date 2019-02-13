@@ -52,8 +52,9 @@ original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL
 
 # aggregate the data by subject and session, compute the means and sigma.
 #   fixations
-MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN= mean)
+MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
 names(MeanFix) <- c("Subject","Condition","fixMean")
+
 SDFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
 names(SDFix) <- c("Subject","Condition","fixSD")
 
@@ -64,13 +65,22 @@ names(MeanSacAmp) <- c("Subject","Condition","sacAmpMean")
 SDSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
 names(SDSacAmp) <- c("Subject","Condition","sacAmpSD")
 
-#   saccade velocity
+#   average saccade velocity
 MeanSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
 names(MeanSacVel) <- c("Subject","Condition","sacAvgVelMean")
 
 SDSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
 names(SDSacVel) <- c("Subject","Condition","sacAvgVelSD")
 
+#   make it one table
+all.the.stats <- merge(MeanFix,SDFix, c("Subject","Condition"))
+all.the.stats <- merge(all.the.stats,MeanSacAmp,c("Subject","Condition"))
+all.the.stats <- merge(all.the.stats,SDSacAmp,c("Subject","Condition"))
+all.the.stats <- merge(all.the.stats,MeanSacVel,c("Subject","Condition"))
+all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
+
+# AN OVERLY CLEVER ATTEMPT AT AGGREGATION
+# VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 # aggregate the data by subject and session, i.e. compute means and standard deviations for each subject and session
 # wreckit <- by(data = list(original$CURRENT_FIX_DURATION,original$NEXT_SAC_AMPLITUDE,original$NEXT_SAC_PEAK_VELOCITY), INDICES = list(original$SUBJECT,original$CONDITION), FUN = describe)
 
