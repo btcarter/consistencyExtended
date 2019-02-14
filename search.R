@@ -8,10 +8,10 @@
 ###############
 
 # check for required packaages are install them if necessary
-list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr")          # list of packages
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                # compare the list to the installed packages list and add missing packages to new list
-if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                               # install missing packages
-lapply(list.of.packages,library,character.only = TRUE)                                                     # load packages
+list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of packages
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                           # compare the list to the installed packages list and add missing packages to new list
+if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
+lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
 
 #######################
 # VARIABLES AND PATHS #
@@ -20,6 +20,7 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 fixation.report <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/SearchFixationReport.txt"                 # the fixation report from dataViewer
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"              # this is the matrix containing all the errors and all the corrections
 output.dir <- "~/Box/LukeLab/Caffeine/results"                                                           # a path to the output destination
+sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                   # a path to the sessions list
 
 #################
 # PREPROCESSING #
@@ -28,7 +29,9 @@ output.dir <- "~/Box/LukeLab/Caffeine/results"                                  
 # read in the report and a table of corrections
 original <- read.table(fixation.report, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
 corrections <- read.table(correction.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
+sessions <- read.table(sessions.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
 
+# replace broken participant labels
 original$Subject <- as.character(original$RECORDING_SESSION_LABEL)                                      # create the subject column and set it equal to the characters in the recording session labels
 for (i in 1:nrow(corrections)) {                                                                        # for loop to run through the correction data and fix the mistakes in the recording session labels,
   brokenWindow = corrections[i,1]                                                                       # then move those corrections from the subject column to the recording session labels
@@ -45,6 +48,14 @@ original = original[is.na(original$NEXT_SAC_AMPLITUDE) == FALSE,]               
 # parse recording session labels into participantID and treatment condition variable
 original$SUBJECT <- gsub("s(\\d+)c\\w","\\1", original$RECORDING_SESSION_LABEL)                         # extract subject numbers and create a new subject column and put them in there.
 original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL)                       # now do the same thing for caffeine condition
+
+# remove participants without four sessions
+all.participants <- unique(original$SUBJECT)
+complete.participants <- unique(sessions$Subject)
+incomplete.participants <- all.participants[!(all.participants %in% complete.participants)]
+for (i in incomplete.participants) {
+  original <- original[!(original$SUBJECT == i),]
+}
 
 ######################
 # MATHS and WIZARDRY #
@@ -78,22 +89,15 @@ all.the.stats <- merge(all.the.stats,MeanSacAmp,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,SDSacAmp,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,MeanSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
+all.the.stats <- merge(all.the.stats,sessions,c("Subject","Condition"))
 
 # statstical tests
 #   is there a difference between conditions and what does that look like?
-#     fixation duration: anova & box plot
-fix.duration.anova <- aov(fixMean ~ Condition,data=all.the.stats)         # one way anova looking at fixation duration by condition
-summary(fix.duration.anova)                                                       # summary statistics
-boxplot(fixMean~Condition,data=all.the.stats,main="Fixation Duration",xlab="Caffiene Condition",ylab="Fixation Duration (msec)")  # make a boxplot for me to look at.
-
-#LMER
-library(lme4)
-library(lmerTest)
+#     fixation duration: lmer
 fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT), data = original)
 summary(fix.dur)
 
-#     saccade amplitude: anova & box plot
-sac.amplitude.anova <- aov(NEXT_SAC_AMPLITUDE ~ CONDITION,data=original)
-summary(sac.amplitude.anova)
+#     saccade amplitude: lmer
+
 
 # how consistent is everyone across sessions?
