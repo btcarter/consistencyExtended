@@ -1,7 +1,9 @@
 # Author: Benjamin Carter
 # Date: 2019-02-05
 # Project: Eye Movement Consistency Extended
-# Purpose: Preprocess and clean visual search data and then perform statistics to determine the consistency of eye movements over time.
+# Purpose: Preprocess visual search data and then perform statistics to determine the consistency of eye movements over time
+#          and if there is a difference between sessions and conditions.
+
 
 ###############
 # ENVIRONMENT #
@@ -57,11 +59,20 @@ for (i in incomplete.participants) {
   original <- original[!(original$SUBJECT == i),]
 }
 
+# add in session IDs for each data point
+sessions$RECORDING_SESSION_LABEL <- paste("s",sessions$Subject,"c",sessions$Condition,sep="")                            # create a RECORDING_SESSION_LABEL variable for the sessions chart
+original$SESSION = 1                                                                                                     # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
+for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session varaible and replace the value with the correct one from the sessions document
+  recording.session.label = sessions[i,4]
+  session.number = sessions[i,3]
+  original[original$RECORDING_SESSION_LABEL == recording.session.label, ]$SESSION = session.number
+}
+
 ######################
 # MATHS and WIZARDRY #
 ######################
 
-# aggregate the data by subject and session, compute the means and sigma.
+# aggregate data by subject and session, compute the means and sigma.
 #   fixations
 MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
 names(MeanFix) <- c("Subject","Condition","fixMean")
@@ -92,12 +103,15 @@ all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,sessions,c("Subject","Condition"))
 
 # statstical tests
+#   how consistent is everyone across sessions?
+correlations$Subject <- unique(all.the.stats$Subject)
+correlations$corFixMean <- cor(all.the.stats[all.the.stats$Subject == correlations$Subject,]$Session, all.the.stats[all.the.stats$Subject == correlations$Subject, ]$fixMean, method = "pearson")
+
+
+
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
 fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT), data = original)
 summary(fix.dur)
 
 #     saccade amplitude: lmer
-
-
-# how consistent is everyone across sessions?
