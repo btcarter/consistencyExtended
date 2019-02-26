@@ -103,12 +103,15 @@ all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,sessions,c("Subject","Condition"))
 
 # now melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
-hot.cheddar.and.rhye <- melt(all.the.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so all the data is in a single table
+hot.cheddar.and.rhye <- melt(all.the.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so variables are now contained in a single column
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)                                                                 # rearranges data so data is there is one line per subject
 
-# statstical tests
-#   how consistent is everyone across sessions?
-# rcorr from hmsc - makes a martix
+# simple correlation - how consistent is everyone across sessions for the search task?
+mayo <- tuna.melt[c("1_fixMean","2_fixMean","3_fixMean","4_fixMean")]                                                                  # setting variables to compute coefficients for
+what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
+
+
+
 # cor.test gives p-values
 
 
