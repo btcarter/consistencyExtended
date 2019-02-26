@@ -68,9 +68,9 @@ for (i in 1:nrow(sessions)) {                                                   
   original[original$RECORDING_SESSION_LABEL == recording.session.label, ]$SESSION = session.number
 }
 
-######################
-# MATHS and WIZARDRY #
-######################
+#############################
+# SIMPLE MATHS and WIZARDRY #
+#############################
 
 # aggregate data by subject and session, compute the means and sigma.
 #   fixations
@@ -102,12 +102,19 @@ all.the.stats <- merge(all.the.stats,MeanSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
 all.the.stats <- merge(all.the.stats,sessions,c("Subject","Condition"))
 
+# now melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
+hot.cheddar.and.rhye <- melt(all.the.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so all the data is in a single table
+tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)                                                                 # rearranges data so data is there is one line per subject
+
 # statstical tests
 #   how consistent is everyone across sessions?
-correlations$Subject <- unique(all.the.stats$Subject)
-correlations$corFixMean <- cor(all.the.stats[all.the.stats$Subject == correlations$Subject,]$Session, all.the.stats[all.the.stats$Subject == correlations$Subject, ]$fixMean, method = "pearson")
+# rcorr from hmsc - makes a martix
+# cor.test gives p-values
 
 
+##################################
+# MADAGASCAR - Playing with LMER #
+##################################
 
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
