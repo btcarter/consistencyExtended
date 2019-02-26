@@ -107,10 +107,24 @@ hot.cheddar.and.rhye <- melt(all.the.stats, id=c("Subject","Session","Condition"
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)                                                                 # rearranges data so data is there is one line per subject
 
 # simple correlation - how consistent is everyone across sessions for the search task?
-mayo <- tuna.melt[c("1_fixMean","2_fixMean","3_fixMean","4_fixMean")]                                                                  # setting variables to compute coefficients for
-what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
+sendIt = paste(output.dir,"/simpleCorrelations.txt",sep = "")                                                                                 # name of output file
+write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 
-
+for (i in 1:6) {
+  i=i+1
+  print(i)
+  metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
+  write("====================",sendIt,append = TRUE)
+  write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
+  write("====================",sendIt,append = TRUE)
+  a=i+7
+  b=i+14
+  c=i+21
+  mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
+  what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
+  write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = FALSE)                                               # write coefficients to a table
+  write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = FALSE)                                               # write p-values to same table
+}
 
 # cor.test gives p-values
 
