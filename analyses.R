@@ -109,6 +109,7 @@ tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)          
 # simple correlation - how consistent is everyone across sessions for the search task?
 sendIt = paste(output.dir,"/simpleCorrelations.txt",sep = "")                                                                                 # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
+write("",sendIt,append = TRUE)
 
 for (i in 1:6) {
   i=i+1
@@ -117,13 +118,18 @@ for (i in 1:6) {
   write("====================",sendIt,append = TRUE)
   write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
   write("====================",sendIt,append = TRUE)
+  write("",sendIt,append = TRUE)
   a=i+7
   b=i+14
   c=i+21
   mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
   what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
-  write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = FALSE)                                               # write coefficients to a table
-  write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = FALSE)                                               # write p-values to same table
+  write("r",sendIt,append = TRUE)
+  write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write coefficients to a table
+  write("",sendIt,append = TRUE)
+  write("P",sendIt,append = TRUE)
+  write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write p-values to same table
+  write("",sendIt,append = TRUE)
 }
 
 # cor.test gives p-values
