@@ -35,7 +35,7 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 simple.stats.list <- c()                                                                                # this is a list of the objects created by the for loop below (task specific matrices containing subject level statistics) and is used at the end of the for loop
 
 for (z in reports) {
-  z = "AntiSaccadeFixationReport.txt" # debugging
+  z = "SearchFixationReport.txt" # debugging
   fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
