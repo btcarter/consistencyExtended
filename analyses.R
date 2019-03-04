@@ -20,7 +20,7 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 #######################
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 reports <- c("AntiSaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
-output.dir <- "~/Box/LukeLab/Caffeine/results"                                                           # a path to the output destination
+output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                          # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"              # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                   # a path to the sessions list
 
@@ -32,13 +32,14 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
 
+simple.stats.list <- c()                                                                                # this is a list of the objects created by the for loop below (task specific matrices containing subject level statistics) and is used at the end of the for loop
 
-for (i in reports) {
-  i="SearchFixationReport.txt" # Debugging step
-  fixation.report <- paste(report.dir,i,sep="")                                                         # path to the fixation report from dataViewer
+for (z in reports) {
+  z = "AntiSaccadeFixationReport.txt" # debugging
+  fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
-  original <- read.table(fixation.report, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
+  original <- read.table(fixation.report, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
   corrections <- read.table(correction.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
   sessions <- read.table(sessions.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
   
@@ -48,7 +49,9 @@ for (i in reports) {
     brokenWindow = corrections[i,1]                                                                       # then move those corrections from the subject column to the recording session labels
     brokenWindow = factor(brokenWindow, levels = levels(original$RECORDING_SESSION_LABEL))
     newWindow = corrections[i,2]
-    original[original$RECORDING_SESSION_LABEL == brokenWindow, ]$Subject = as.character(newWindow)
+    if (is.na(original[original$RECORDING_SESSION_LABEL == brokenWindow, ]$Subject) == FALSE) {
+      original[original$RECORDING_SESSION_LABEL == brokenWindow, ]$Subject = as.character(newWindow)
+    }
   }
   original$Subject = as.factor(original$Subject)
   original$RECORDING_SESSION_LABEL <- original$Subject
@@ -70,7 +73,7 @@ for (i in reports) {
   # add in session IDs for each data point
   sessions$RECORDING_SESSION_LABEL <- paste("s",sessions$Subject,"c",sessions$Condition,sep="")                            # create a RECORDING_SESSION_LABEL variable for the sessions chart
   original$SESSION = 1                                                                                                     # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
-  for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session varaible and replace the value with the correct one from the sessions document
+  for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session variable in the original report and replace the value with the correct one from the sessions document
     recording.session.label = sessions[i,4]
     session.number = sessions[i,3]
     original[original$RECORDING_SESSION_LABEL == recording.session.label, ]$SESSION = session.number
@@ -78,43 +81,45 @@ for (i in reports) {
   
   # aggregate data by subject and session, compute the means and sigma.
   #   fixations
-  MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
-  names(MeanFix) <- c("Subject","Condition","fixMean")
+  MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
+  names(MeanFix) <- c("Subject","Condition","Session","fixMean")
   
-  SDFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
-  names(SDFix) <- c("Subject","Condition","fixSD")
+  SDFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
+  names(SDFix) <- c("Subject","Condition","Session","fixSD")
   
   #   saccade amplitude
-  MeanSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
-  names(MeanSacAmp) <- c("Subject","Condition","sacAmpMean")
+  MeanSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
+  names(MeanSacAmp) <- c("Subject","Condition","Session","sacAmpMean")
   
-  SDSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
-  names(SDSacAmp) <- c("Subject","Condition","sacAmpSD")
+  SDSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
+  names(SDSacAmp) <- c("Subject","Condition","Session","sacAmpSD")
   
   #   average saccade velocity
-  MeanSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = mean)
-  names(MeanSacVel) <- c("Subject","Condition","sacAvgVelMean")
+  MeanSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
+  names(MeanSacVel) <- c("Subject","Condition","Session","sacAvgVelMean")
   
-  SDSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION), FUN = sd)
-  names(SDSacVel) <- c("Subject","Condition","sacAvgVelSD")
+  SDSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
+  names(SDSacVel) <- c("Subject","Condition","Session","sacAvgVelSD")
   
   #   make it one table
-  all.the.stats <- merge(MeanFix,SDFix, c("Subject","Condition"))
-  all.the.stats <- merge(all.the.stats,MeanSacAmp,c("Subject","Condition"))
-  all.the.stats <- merge(all.the.stats,SDSacAmp,c("Subject","Condition"))
-  all.the.stats <- merge(all.the.stats,MeanSacVel,c("Subject","Condition"))
-  all.the.stats <- merge(all.the.stats,SDSacVel,c("Subject","Condition"))
-  all.the.stats <- merge(all.the.stats,sessions,c("Subject","Condition"))
-  all.the.stats$Task = gsub("(\\w+)FixationReport.txt","\\1",i)
+  task.stats <- merge(MeanFix,SDFix, c("Subject","Condition","Session"))
+  task.stats <- merge(task.stats,MeanSacAmp,c("Subject","Condition","Session"))
+  task.stats <- merge(task.stats,SDSacAmp,c("Subject","Condition","Session"))
+  task.stats <- merge(task.stats,MeanSacVel,c("Subject","Condition","Session"))
+  task.stats <- merge(task.stats,SDSacVel,c("Subject","Condition","Session"))
+  task.stats <- merge(task.stats,sessions,c("Subject","Condition","Session"))
+  task.stats$Task = gsub("(\\w+)FixationReport.txt","\\1",z)
   
-  #   save it as object
-  a <- gsub("(\\w+)FixationReport.txt","\\1",i)
-  assign(paste(a,"stats",sep = "_"),all.the.stats)
-  write.csv(paste(a,"stats",sep = "_"))
+  #   save it as object and also write it to a CSV in the output directory
+  a <- gsub("(\\w+)FixationReport.txt","\\1",z)                                     # extracts task name
+  b <- paste(a,"subj_stats",sep = "_")                                              # creates specific name to be used to assign values in task.stats into an object for future use
+  assign(b,task.stats)                                                              # creates object using task name containing same data as task.stats
+  write.csv(task.stats,paste(output.dir,b,".csv",sep = ""))                         # outputs a csv of task.stats to the results directory
+  simple.stats.list <- append(simple.stats.list,b)                                  # adds object name to a list of the task specific matrices
 }
 
-
-
+# merge everything into one data frame
+all.simple.task.stats <- merge(simple.stats.list[3],merge(simple.stats.list[1],simple.stats.list[2],c("Subject","Condition","Session")),c("Subject","Condition","Session"))
 
 #############################
 # SIMPLE MATHS and WIZARDRY #
@@ -124,7 +129,7 @@ for (i in reports) {
 # This section preforms all the statistical tests of interest to our study.
 
 # now melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
-hot.cheddar.and.rhye <- melt(all.the.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so variables are now contained in a single column
+hot.cheddar.and.rhye <- melt(task.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so variables are now contained in a single column
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)                                                                 # rearranges data so data is there is one line per subject
 
 # simple correlation - how consistent is everyone across sessions for the search task?
