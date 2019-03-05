@@ -3,3 +3,6 @@ c14sy	s14cy
 s06co	s6co
 s09cg	s9cg
 s09co	s9co
+s009cg	s9cg
+s12cy2	s13cy
+s06o	s6co
