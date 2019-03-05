@@ -9,11 +9,11 @@ This study is an extension of the Eye Movement Consistency study (now published 
 
 <ol>
 	<li>Data were initially viewed via DataViewer. Fixation and Saccade reports were created for all sessions, named conditionReportType.</li>
-	<li>Reports were then preprocessed using the following R scripts:</li>
-	  <ul>
-	    <li>search.R</li>
-	    <li>reading.R</li>
-	    <li>antisaccade.R</li>
-	  </ul>
-	<li></li>
+	<li>The script <code>analysis.R</code> performed the following functions:
+	<ul>
+	  <li>Preprocessing</li>
+	  <li>Computation of participant means and standard deviations by task and session.</li>
+	  <li>Correlation of means and standard deviation across tasks and sessions.</li>
+	  <li>LMER</li>
+	</ul>
 </ol>
