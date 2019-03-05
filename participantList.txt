@@ -27,10 +27,6 @@ Subject	Condition	Session
 8	r	2
 8	y	3
 8	o	4
-9	o	1
-9	g	2
-9	r	3
-9	y	4
 11	r	1
 11	y	2
 11	o	3
@@ -39,6 +35,10 @@ Subject	Condition	Session
 12	r	2
 12	y	3
 12	o	4
+13	y	1
+13	r	2
+13	g	3
+13	o	4
 14	o	1
 14	y	2
 14	r	3
@@ -59,14 +59,6 @@ Subject	Condition	Session
 18	r	2
 18	y	3
 18	o	4
-19	o	1
-19	g	2
-19	r	3
-19	y	4
-20	y	1
-20	o	2
-20	g	3
-20	r	4
 21	g	1
 21	o	2
 21	y	3
