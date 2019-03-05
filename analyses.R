@@ -10,7 +10,8 @@
 ###############
 
 # check for required packaages are install them if necessary
-list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of packages
+#potential list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of packages
+list.of.packages <- c("reshape2","Hmsic")          # list of packages
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                           # compare the list to the installed packages list and add missing packages to new list
 if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
@@ -32,10 +33,9 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
 
-simple.stats.list <- c()                                                                                # this is a list of the objects created by the for loop below (task specific matrices containing subject level statistics) and is used at the end of the for loop
+simple.stats.df <- data.frame()     # this is a list created to store the dataframes output by the for loop below.
 
 for (z in reports) {
-  #z = "ReadingFixationReport.txt" # debugging
   fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
@@ -110,43 +110,63 @@ for (z in reports) {
   task.stats <- merge(task.stats,sessions,c("Subject","Condition","Session"))
   task.stats$Task = gsub("(\\w+)FixationReport.txt","\\1",z)
   
-  #   save it as object and also write it to a CSV in the output directory
+  #   save it to a data.frame
   a <- gsub("(\\w+)FixationReport.txt","\\1",z)                                     # extracts task name
-  b <- paste(a,"subj_stats",sep = "_")                                              # creates specific name to be used to assign values in task.stats into an object for future use
-  assign(b,task.stats)                                                              # creates object using task name containing same data as task.stats
-  write.csv(task.stats,paste(output.dir,b,".csv",sep = ""))                         # outputs a csv of task.stats to the results directory
-  simple.stats.list <- append(simple.stats.list,b)                                  # adds object name to a list of the task specific matrices
+  simple.stats.df <- rbind(simple.stats.df,task.stats)                              # adds data.frame to a larger data.frame with all task data
 }
 
-# combine simple stats into a single dataframe
-all.simple.stats <- rbind(simple.stats.list)
+write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.names = FALSE)            # write data.frame to a csv in the output directory, omit row names
 
 #############################
 # SIMPLE MATHS and WIZARDRY #
 #############################
+
 # This section preforms all the statistical tests of interest to our study.
 
-
-# now melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
-hot.cheddar.and.rhye <- melt(all.simple.stats, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
+# melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
+hot.cheddar.and.rhye <- melt(simple.stats.df, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                 # rearranges data so data is there is one line per subject
 
 # simple correlation - how consistent is everyone across sessions for the search task?
-sendIt = paste(output.dir,"/simpleCorrelations.txt",sep = "")                                                                                 # name of output file
+#   across sessions, within tasks
+sendIt = paste(output.dir,"/simpleCorrelationsBySession.txt",sep = "")                                                                                 # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
 
 for (i in 1:6) {
-  i=i+1
-  print(i)
+    i=i+2
+    metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
+    write("====================",sendIt,append = TRUE)
+    write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
+    write("====================",sendIt,append = TRUE)
+    write("",sendIt,append = TRUE)
+    a=i+24
+    b=a+24
+    c=b+24
+    mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
+    what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
+    write("r",sendIt,append = TRUE)
+    write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write coefficients to a table
+    write("",sendIt,append = TRUE)
+    write("P",sendIt,append = TRUE)
+    write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write p-values to same table
+    write("",sendIt,append = TRUE)
+  }
+  
+
+#   across tasks, within a session
+sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                                 # name of output file
+write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
+write("",sendIt,append = TRUE)
+for (i in 3:) {
   metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
   write("====================",sendIt,append = TRUE)
   write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
   write("====================",sendIt,append = TRUE)
   write("",sendIt,append = TRUE)
-  a=i+7
-  b=i+14
-  c=i+21
+  a=i+2
+  b=a+2
+  c=b+2
   mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
   what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
   write("r",sendIt,append = TRUE)
@@ -156,9 +176,6 @@ for (i in 1:6) {
   write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write p-values to same table
   write("",sendIt,append = TRUE)
 }
-
-# cor.test gives p-values
-
 
 ##################################
 # MADAGASCAR - Playing with LMER #
