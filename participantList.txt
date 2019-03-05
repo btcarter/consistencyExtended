@@ -35,10 +35,6 @@ Subject	Condition	Session
 12	r	2
 12	y	3
 12	o	4
-13	y	1
-13	r	2
-13	g	3
-13	o	4
 14	o	1
 14	y	2
 14	r	3
