@@ -35,7 +35,7 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 simple.stats.list <- c()                                                                                # this is a list of the objects created by the for loop below (task specific matrices containing subject level statistics) and is used at the end of the for loop
 
 for (z in reports) {
-  z = "SearchFixationReport.txt" # debugging
+  #z = "ReadingFixationReport.txt" # debugging
   fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
@@ -49,8 +49,8 @@ for (z in reports) {
     brokenWindow = corrections[i,1]                                                                       # then move those corrections from the subject column to the recording session labels
     brokenWindow = factor(brokenWindow, levels = levels(original$RECORDING_SESSION_LABEL))
     newWindow = corrections[i,2]
-    if (is.na(original[original$RECORDING_SESSION_LABEL == brokenWindow, ]$Subject) == FALSE) {
-      original[original$RECORDING_SESSION_LABEL == brokenWindow, ]$Subject = as.character(newWindow)
+    if (is.na(original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow]) == FALSE) {
+      original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow] = as.character(newWindow)
     }
   }
   original$Subject = as.factor(original$Subject)
@@ -72,11 +72,11 @@ for (z in reports) {
   
   # add in session IDs for each data point
   sessions$RECORDING_SESSION_LABEL <- paste("s",sessions$Subject,"c",sessions$Condition,sep="")                            # create a RECORDING_SESSION_LABEL variable for the sessions chart
-  original$SESSION = 1                                                                                                     # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
+  original$SESSION = 10                                                                                                    # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
   for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session variable in the original report and replace the value with the correct one from the sessions document
     recording.session.label = sessions[i,4]
-    session.number = sessions[i,3]
-    original[original$RECORDING_SESSION_LABEL == recording.session.label, ]$SESSION = session.number
+    session.number = as.numeric(sessions[i,3])
+    original$SESSION[original$RECORDING_SESSION_LABEL == recording.session.label] = session.number
   }
   
   # aggregate data by subject and session, compute the means and sigma.
@@ -118,19 +118,18 @@ for (z in reports) {
   simple.stats.list <- append(simple.stats.list,b)                                  # adds object name to a list of the task specific matrices
 }
 
-# merge everything into one data frame
-all.simple.task.stats <- merge(simple.stats.list[3],merge(simple.stats.list[1],simple.stats.list[2],c("Subject","Condition","Session")),c("Subject","Condition","Session"))
+# combine simple stats into a single dataframe
+all.simple.stats <- rbind(simple.stats.list)
 
 #############################
 # SIMPLE MATHS and WIZARDRY #
 #############################
-
-
 # This section preforms all the statistical tests of interest to our study.
 
+
 # now melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
-hot.cheddar.and.rhye <- melt(task.stats, id=c("Subject","Session","Condition"))                                                     # rearranges the stats so variables are now contained in a single column
-tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + variable)                                                                 # rearranges data so data is there is one line per subject
+hot.cheddar.and.rhye <- melt(all.simple.stats, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
+tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                 # rearranges data so data is there is one line per subject
 
 # simple correlation - how consistent is everyone across sessions for the search task?
 sendIt = paste(output.dir,"/simpleCorrelations.txt",sep = "")                                                                                 # name of output file
