@@ -121,19 +121,20 @@ write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.name
 # SIMPLE MATHS and WIZARDRY #
 #############################
 
-# This section preforms all the statistical tests of interest to our study.
+# This section preforms all the correlational tests of interest to our study.
 
 # melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
+simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                                                                               # for some reason the Subject column needs to be turned into a numeric (why is that not the default assumption).
 hot.cheddar.and.rhye <- melt(simple.stats.df, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
-tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                 # rearranges data so data is there is one line per subject
+tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                # rearranges data so data is there is one line per subject
 
 # simple correlation - how consistent is everyone across sessions for the search task?
 #   across sessions, within tasks
-sendIt = paste(output.dir,"/simpleCorrelationsBySession.txt",sep = "")                                                                                 # name of output file
+sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                                 # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
 
-for (i in 1:6) {
+for (i in c(1:6,9:14,17:22)) {
     i=i+2
     metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
     write("====================",sendIt,append = TRUE)
@@ -155,19 +156,19 @@ for (i in 1:6) {
   
 
 #   across tasks, within a session
-sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                                 # name of output file
+sendIt = paste(output.dir,"/simpleCorrelationsBySession.txt",sep = "")                                                                                 # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
-for (i in 3:) {
-  metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
+for (i in c(1:6,25:30,49:54,73:78)) {
+  i=i+2
+  metric.name <- gsub("(\\d)_\\w+","Session_\\1",names(tuna.melt)[i])                                                                            # get variable name
   write("====================",sendIt,append = TRUE)
   write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
   write("====================",sendIt,append = TRUE)
   write("",sendIt,append = TRUE)
-  a=i+2
-  b=a+2
-  c=b+2
-  mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
+  a=i+8
+  b=a+8
+  mayo <- tuna.melt[c(i,a,b)]                                                                                                          # setting variables to compute coefficients for variable of interest
   what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
   write("r",sendIt,append = TRUE)
   write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write coefficients to a table
@@ -176,14 +177,3 @@ for (i in 3:) {
   write.table(what.a.mess[["P"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write p-values to same table
   write("",sendIt,append = TRUE)
 }
-
-##################################
-# MADAGASCAR - Playing with LMER #
-##################################
-
-#   is there a difference between conditions and what does that look like?
-#     fixation duration: lmer
-fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT), data = original)
-summary(fix.dur)
-
-#     saccade amplitude: lmer
