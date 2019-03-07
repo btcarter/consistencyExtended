@@ -16,14 +16,24 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
 
+
 #######################
 # VARIABLES AND PATHS #
 #######################
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-reports <- c("AntiSaccadeFixationReport.txt","ProSaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")        # names of the fixation reports as an array
+reports <- c("AntisaccadeFixationReport.txt","ProsaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")        # names of the fixation reports as an array
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                            # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                                # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                     # a path to the sessions list
+
+
+# split Antisaccade fixation report into two, one for antisaccades and one for prosaccades
+saccades <- paste(report.dir,"AntiSaccadeFixationReport1.txt",sep="")
+saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
+anti <- subset(saccades, task == "antisaccade")                                                                                                                  # make antisaccade report
+pro <- subset(saccades, task == "prosaccade")                                                                                                                    # make prosaccade report
+write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntisaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
+write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProsaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
 #################
 # PREPROCESSING #
@@ -32,14 +42,6 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 # This will clean the data by fixing broken participant labels, remove NA values, remove participants with less than 4 sessions,
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
-
-# split Antisaccade fixation report into two, one for antisaccades and one for prosaccades
-saccades <- paste(report.dir,"AntiSaccadeFixationReport.txt",sep="")
-saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
-anti <- subset(saccades, task == "antisaccade")                                                                                                                  # make antisaccade report
-pro <- subset(saccades, task == "prosaccade")                                                                                                                    # make prosaccade report
-write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntiSaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
-write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProSaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
 # a preprocessing function
 participant.stats <- function(z,correction.matrix,sessions.matrix) {
@@ -122,10 +124,9 @@ participant.stats <- function(z,correction.matrix,sessions.matrix) {
 
 # Use function to assemble single data.frame
 simple.stats.df <- data.frame()                                                                       # unified data.frame for function output.
-LIVE <- participant.stats("AntiSaccadeFixationReport.txt",correction.matrix,sessions.matrix) # debugging
 
 for (i in reports) {
-  preprocessed <- participant.stats(reports,correction.matrix,sessions.matrix)
+  preprocessed <- participant.stats(i,correction.matrix,sessions.matrix)
   simple.stats.df <- rbind(simple.stats.df,preprocessed) 
 }
 
@@ -144,7 +145,7 @@ tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)   
 
 # simple correlation - how consistent is everyone across sessions for the search task?
 #   across sessions, within tasks
-sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                                 # name of output file
+sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                           # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
 
