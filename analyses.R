@@ -20,10 +20,10 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 # VARIABLES AND PATHS #
 #######################
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-reports <- c("AntiSaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
-output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                          # a path to the output destination
-correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"              # this is the matrix containing all the errors and all the corrections
-sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                   # a path to the sessions list
+reports <- c("AntiSaccadeFixationReport.txt","ProSaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")        # names of the fixation reports as an array
+output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                            # a path to the output destination
+correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                                # this is the matrix containing all the errors and all the corrections
+sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                     # a path to the sessions list
 
 #################
 # PREPROCESSING #
@@ -33,10 +33,16 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
 
-simple.stats.df <- data.frame()     # this is a list created to store the dataframes output by the for loop below.
+# split Antisaccade fixation report into two, one for antisaccades and one for prosaccades
+saccades <- paste(report.dir,"AntiSaccadeFixationReport.txt",sep="")
+saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
+anti <- subset(saccades, task == "antisaccade")                                                                                                                  # make antisaccade report
+pro <- subset(saccades, task == "prosaccade")                                                                                                                    # make prosaccade report
+write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntiSaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
+write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProSaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
 # a preprocessing function
-participant.stats <- function(z) {
+participant.stats <- function(z,correction.matrix,sessions.matrix) {
   fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
@@ -110,94 +116,18 @@ participant.stats <- function(z) {
   task.stats <- merge(task.stats,sessions,c("Subject","Condition","Session"))
   task.stats$Task = gsub("(\\w+)FixationReport.txt","\\1",z) 
   
-  #   save it to a data.frame
-  a <- gsub("(\\w+)FixationReport.txt","\\1",z)                                     # extracts task name
-  simple.stats.df <- rbind(simple.stats.df,task.stats)                              # adds data.frame to a larger data.frame with all task data
-  return(simple.stats.df)
+  #   return resulting data.frame
+  return(task.stats)
 }
 
-lapply(reports, participant.stats)
+# Use function to assemble single data.frame
+simple.stats.df <- data.frame()                                                                       # unified data.frame for function output.
+LIVE <- participant.stats("AntiSaccadeFixationReport.txt",correction.matrix,sessions.matrix) # debugging
 
-# # original loop but I'm changing it because I forgot to divide the antisaccade report into pro and antisaccades
-# for (z in reports) {
-#   fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
-#   
-#   # read in the report and a table of corrections
-#   original <- read.table(fixation.report, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
-#   corrections <- read.table(correction.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
-#   sessions <- read.table(sessions.matrix, header = TRUE, sep = "\t", na.strings = ".", dec = ".")
-#   
-#   # replace broken participant labels
-#   original$Subject <- as.character(original$RECORDING_SESSION_LABEL)                                      # create the subject column and set it equal to the characters in the recording session labels
-#   for (i in 1:nrow(corrections)) {                                                                        # for loop to run through the correction data and fix the mistakes in the recording session labels,
-#     brokenWindow = corrections[i,1]                                                                       # then move those corrections from the subject column to the recording session labels
-#     brokenWindow = factor(brokenWindow, levels = levels(original$RECORDING_SESSION_LABEL))
-#     newWindow = corrections[i,2]
-#     if (is.na(original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow]) == FALSE) {
-#       original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow] = as.character(newWindow)
-#     }
-#   }
-#   original$Subject = as.factor(original$Subject)
-#   original$RECORDING_SESSION_LABEL <- original$Subject
-#   original$Subject <- NULL                                                                                # disappear the now redundant subject column
-#   original = original[is.na(original$NEXT_SAC_AMPLITUDE) == FALSE,]                                       # remove rows without saccade information (the NA rows)
-#   
-#   # parse recording session labels into participantID and treatment condition variable
-#   original$SUBJECT <- gsub("s(\\d+)c\\w","\\1", original$RECORDING_SESSION_LABEL)                         # extract subject numbers and create a new subject column and put them in there.
-#   original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL)                       # now do the same thing for caffeine condition
-#   
-#   # remove participants without four sessions
-#   all.participants <- unique(original$SUBJECT)
-#   complete.participants <- unique(sessions$Subject)
-#   incomplete.participants <- all.participants[!(all.participants %in% complete.participants)]
-#   for (i in incomplete.participants) {
-#     original <- original[!(original$SUBJECT == i),]
-#   }
-#   
-#   # add in session IDs for each data point
-#   sessions$RECORDING_SESSION_LABEL <- paste("s",sessions$Subject,"c",sessions$Condition,sep="")                            # create a RECORDING_SESSION_LABEL variable for the sessions chart
-#   original$SESSION = 10                                                                                                    # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
-#   for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session variable in the original report and replace the value with the correct one from the sessions document
-#     recording.session.label = sessions[i,4]
-#     session.number = as.numeric(sessions[i,3])
-#     original$SESSION[original$RECORDING_SESSION_LABEL == recording.session.label] = session.number
-#   }
-#   
-#   # aggregate data by subject and session, compute the means and sigma.
-#   #   fixations
-#   MeanFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
-#   names(MeanFix) <- c("Subject","Condition","Session","fixMean")
-#   
-#   SDFix <- aggregate(original$CURRENT_FIX_DURATION, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
-#   names(SDFix) <- c("Subject","Condition","Session","fixSD")
-#   
-#   #   saccade amplitude
-#   MeanSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
-#   names(MeanSacAmp) <- c("Subject","Condition","Session","sacAmpMean")
-#   
-#   SDSacAmp <- aggregate(original$NEXT_SAC_AMPLITUDE, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
-#   names(SDSacAmp) <- c("Subject","Condition","Session","sacAmpSD")
-#   
-#   #   average saccade velocity
-#   MeanSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = mean)
-#   names(MeanSacVel) <- c("Subject","Condition","Session","sacAvgVelMean")
-#   
-#   SDSacVel <- aggregate(original$NEXT_SAC_AVG_VELOCITY, by=list(original$SUBJECT,original$CONDITION,original$SESSION), FUN = sd)
-#   names(SDSacVel) <- c("Subject","Condition","Session","sacAvgVelSD")
-#   
-#   #   make it one table
-#   task.stats <- merge(MeanFix,SDFix, c("Subject","Condition","Session"))
-#   task.stats <- merge(task.stats,MeanSacAmp,c("Subject","Condition","Session"))
-#   task.stats <- merge(task.stats,SDSacAmp,c("Subject","Condition","Session"))
-#   task.stats <- merge(task.stats,MeanSacVel,c("Subject","Condition","Session"))
-#   task.stats <- merge(task.stats,SDSacVel,c("Subject","Condition","Session"))
-#   task.stats <- merge(task.stats,sessions,c("Subject","Condition","Session"))
-#   task.stats$Task = gsub("(\\w+)FixationReport.txt","\\1",z) 
-#   
-#   #   save it to a data.frame
-#   a <- gsub("(\\w+)FixationReport.txt","\\1",z)                                     # extracts task name
-#   simple.stats.df <- rbind(simple.stats.df,task.stats)                              # adds data.frame to a larger data.frame with all task data
-# }
+for (i in reports) {
+  preprocessed <- participant.stats(reports,correction.matrix,sessions.matrix)
+  simple.stats.df <- rbind(simple.stats.df,preprocessed) 
+}
 
 write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.names = FALSE)            # write data.frame to a csv in the output directory, omit row names
 
