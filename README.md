@@ -13,7 +13,7 @@ This study is an extension of the Eye Movement Consistency study (now published 
 	<ul>
 	  <li>Preprocessing</li>
 	  <li>Computation of participant means and standard deviations by task and session.</li>
-	  <li>Correlation of means and standard deviation across tasks and sessions.</li>
+	  <li>Correlation of means and standard deviations across tasks and sessions.</li>
 	  <li>LMER</li>
 	</ul>
 </ol>
