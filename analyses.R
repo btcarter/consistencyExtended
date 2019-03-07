@@ -143,22 +143,21 @@ simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                  
 hot.cheddar.and.rhye <- melt(simple.stats.df, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                # rearranges data so data is there is one line per subject
 
-# simple correlation - how consistent is everyone across sessions for the search task?
+# simple correlation - how consistent is everyone across sessions for a task?
 #   across sessions, within tasks
 sendIt = paste(output.dir,"/simpleCorrelationsByTask.txt",sep = "")                                                                           # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
-
-for (i in c(1:6,9:14,17:22)) {
+for (i in c(1:6,9:14,17:22,25:30)) {
     i=i+2
     metric.name <- gsub("\\d_(\\w+)","\\1",names(tuna.melt)[i])                                                                            # get variable name
     write("====================",sendIt,append = TRUE)
     write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
     write("====================",sendIt,append = TRUE)
     write("",sendIt,append = TRUE)
-    a=i+24
-    b=a+24
-    c=b+24
+    a=i+32
+    b=a+32
+    c=b+32
     mayo <- tuna.melt[c(i,a,b,c)]                                                                                                          # setting variables to compute coefficients for variable of interest
     what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
     write("r",sendIt,append = TRUE)
@@ -170,20 +169,41 @@ for (i in c(1:6,9:14,17:22)) {
   }
   
 
-#   across tasks, within a session
-sendIt = paste(output.dir,"/simpleCorrelationsBySession.txt",sep = "")                                                                                 # name of output file
+#   across tasks, within a session - fix the intervals
+sendIt = paste(output.dir,"/simpleCorrelationsBySession.txt",sep = "")                                                                        # name of output file
 write("# This is contains the output of correlations between eye tracking metrics, including both r and p-values.",sendIt,append = FALSE)     # start the output file
 write("",sendIt,append = TRUE)
-for (i in c(1:6,25:30,49:54,73:78)) {
-  i=i+2
+for (i in c(1:4)) {
+  i=3+((i-1)*32)
   metric.name <- gsub("(\\d)_\\w+","Session_\\1",names(tuna.melt)[i])                                                                            # get variable name
   write("====================",sendIt,append = TRUE)
   write(metric.name,sendIt,append = TRUE)                                                                                                # put the variable into the output
   write("====================",sendIt,append = TRUE)
   write("",sendIt,append = TRUE)
-  a=i+8
-  b=a+8
-  mayo <- tuna.melt[c(i,a,b)]                                                                                                          # setting variables to compute coefficients for variable of interest
+  a=i+1 # antisaccade
+  b=i+2
+  c=i+3
+  d=i+4
+  e=i+5
+  f=i+8 # prosaccade
+  g=i+9
+  h=i+10
+  j=i+11
+  k=i+12
+  l=i+13
+  m=i+16 # reading
+  n=i+17
+  o=i+18
+  p=i+19
+  q=i+20
+  r=i+21
+  s=i+24 # search
+  t=i+25
+  u=i+26
+  v=i+27
+  w=i+28
+  x=i+29
+  mayo <- tuna.melt[c(i,a,b,c,d,e,f,g,h,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x)]                                                                  # setting variables to compute coefficients for variable of interest
   what.a.mess <- rcorr(as.matrix(mayo),type = "pearson")                                                                                 # rcorr from hmsc - makes a martix of correlation coefficients (r), n, and P values
   write("r",sendIt,append = TRUE)
   write.table(what.a.mess[["r"]],file = sendIt,append = TRUE,sep = "\t",row.names = TRUE, col.names = TRUE)                                               # write coefficients to a table
