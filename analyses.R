@@ -10,16 +10,15 @@
 ###############
 
 # check for required packaages are install them if necessary
-#potential list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of packages
-list.of.packages <- c("reshape2","Hmsic")          # list of packages
+list.of.packages <- c("reshape2","Hmsic")                                                                             # list of packages
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                           # compare the list to the installed packages list and add missing packages to new list
 if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
 
 
-#######################
+######
 # VARIABLES AND PATHS #
-#######################
+######
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 reports <- c("AntisaccadeFixationReport.txt","ProsaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")        # names of the fixation reports as an array
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                            # a path to the output destination
@@ -35,17 +34,16 @@ pro <- subset(saccades, task == "prosaccade")                                   
 write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntisaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
 write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProsaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
-#################
-# PREPROCESSING #
-#################
-
+#####
+# PREPROCESSING
 # This will clean the data by fixing broken participant labels, remove NA values, remove participants with less than 4 sessions,
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
+#####
 
 # a preprocessing function
 participant.stats <- function(z,correction.matrix,sessions.matrix) {
-  fixation.report <- paste(report.dir,z,sep="")                                                         # path to the fixation report from dataViewer
+  fixation.report <- paste(report.dir,z,sep="")                                                           # path to the fixation report from dataViewer
   
   # read in the report and a table of corrections
   original <- read.table(fixation.report, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
@@ -59,7 +57,6 @@ participant.stats <- function(z,correction.matrix,sessions.matrix) {
     brokenWindow = factor(brokenWindow, levels = levels(original$RECORDING_SESSION_LABEL))
     newWindow = corrections[i,2]
     original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow] = as.character(newWindow)
-    #if (is.na(original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow]) == FALSE) {original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow] = as.character(newWindow)}
   }
   original$Subject = as.factor(original$Subject)
   original$RECORDING_SESSION_LABEL <- original$Subject
@@ -132,11 +129,10 @@ for (i in reports) {
 
 write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.names = FALSE)            # write data.frame to a csv in the output directory, omit row names
 
-#############################
-# SIMPLE MATHS and WIZARDRY #
-#############################
-
+######
+# SIMPLE MATHS and WIZARDRY
 # This section preforms all the correlational tests of interest to our study.
+######
 
 # melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
 simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                                                                               # for some reason the Subject column needs to be turned into a numeric (why is that not the default assumption).
