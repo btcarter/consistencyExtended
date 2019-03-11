@@ -11,7 +11,7 @@
 
 # check for required packaages are install them if necessary
 #potential list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of potential packages
-list.of.packages <- c("reshape2","Hmsic")          # list of packages
+list.of.packages <- c("reshape2","Hmsic","lme4","lmerTest")          # list of packages
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                           # compare the list to the installed packages list and add missing packages to new list
 if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
@@ -22,10 +22,10 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 #######################
 
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-reports <- c("AntiSaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
-output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                          # a path to the output destination
-correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"              # this is the matrix containing all the errors and all the corrections
-sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                   # a path to the sessions list
+reports <- c("ProsaccadeFixationReport.txt","AntisaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
+output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
+correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
+sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                               # a path to the sessions list
 
 #################
 # PREPROCESSING #
@@ -33,24 +33,67 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 
 # combine reports into one data.frame and add a session variable.
 #   function to read report, correct errors and add to data frame
-preprocessing <- function(report,dataframe,corrections,sessions) {
-  original <- read.table(report, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
+preprocessing <- function(report,corrections,sessions) {
+  corrections = correction.matrix
+  sessions = sessions.matrix
+  a = paste(report.dir,report,sep="")
+  original <- read.table(a, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
   corrections <- read.table(corrections, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
   sessions <- read.table(sessions, header = TRUE, sep = "\t", na.strings = ".", dec = ".",fill = TRUE)
+  
+  # replace broken participant labels
+  original$Subject <- as.character(original$RECORDING_SESSION_LABEL)                                      # create the subject column and set it equal to the characters in the recording session labels
+  for (i in 1:nrow(corrections)) {                                                                        # for loop to run through the correction data and fix the mistakes in the recording session labels,
+    brokenWindow = corrections[i,1]                                                                       # then move those corrections from the subject column to the recording session labels
+    brokenWindow = factor(brokenWindow, levels = levels(original$RECORDING_SESSION_LABEL))
+    newWindow = corrections[i,2]
+    original$Subject[original$RECORDING_SESSION_LABEL == brokenWindow] = as.character(newWindow)
+  }
+  original$Subject = as.factor(original$Subject)
+  original$RECORDING_SESSION_LABEL <- original$Subject
+  original$Subject <- NULL                                                                                # disappear the now redundant subject column
+  original = original[is.na(original$NEXT_SAC_AMPLITUDE) == FALSE,]                                       # remove rows without saccade information (the NA rows)
+  
+  # parse recording session labels into participantID and treatment condition variable
+  original$SUBJECT <- gsub("s(\\d+)c\\w","\\1", original$RECORDING_SESSION_LABEL)                         # extract subject numbers and create a new subject column and put them in there.
+  original$CONDITION <- gsub("s\\d+c(\\w)","\\1", original$RECORDING_SESSION_LABEL)                       # now do the same thing for caffeine condition
+  
+  # remove participants without four sessions
+  all.participants <- unique(original$SUBJECT)
+  complete.participants <- unique(sessions$Subject)
+  incomplete.participants <- all.participants[!(all.participants %in% complete.participants)]
+  for (i in incomplete.participants) {
+    original <- original[!(original$SUBJECT == i),]
+  }
+  
+  # add in session IDs for each data point
+  sessions$RECORDING_SESSION_LABEL <- paste("s",sessions$Subject,"c",sessions$Condition,sep="")                            # create a RECORDING_SESSION_LABEL variable for the sessions matrix
+  original$SESSION = 10                                                                                                    # create the sessions variable for the original dataset and set it equal to integers between 1 and 4 for all entries
+  for (i in 1:nrow(sessions)) {                                                                                            # now loop through the session variable in the original report and replace the value with the correct one from the sessions document
+    recording.session.label = sessions[i,4]
+    session.number = as.numeric(sessions[i,3])
+    original$SESSION[original$RECORDING_SESSION_LABEL == recording.session.label] = session.number
+  }
+  
+  # add task variable
+  original$TASK = gsub("(\\w+)FixationReport.txt","\\1",report)
+  
+  # select and order variables of interest
+  variables = c("RECORDING_SESSION_LABEL","SUBJECT","CONDITION","SESSION","TASK","CURRENT_FIX_DURATION","NEXT_SAC_DURATION","NEXT_SAC_AVG_VELOCITY","NEXT_SAC_PEAK_VELOCITY","NEXT_SAC_CONTAINS_BLINK","NEXT_SAC_AMPLITUDE")
+  original = original[variables]
+  
+  # return output
+  return(original)
 }
 
 # start the data.frame
 df.all <- data.frame()
 
-#   lappy preprocessing function to list of fixation reports
-
-
-iGottaPee <- function(time) {
-  a = paste("I have to pee in ",time, "seconds!")
-  print(a)
+# apply preprocessing function to list of fixation reports, adding them to a single data.frame
+for (report in reports) {
+  preprocessed <- preprocessing(report,correction.matrix,sessions.matrix)
+  df.all <- rbind(df.all,preprocessed)
 }
-
-lapply(c(6:1),iGottaPee)
 
 ##################################
 # MADAGASCAR - Playing with LMER #
@@ -58,7 +101,7 @@ lapply(c(6:1),iGottaPee)
 
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
-fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT), data = original)
+fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT) + TASK + SESSION, data = df.all)
 summary(fix.dur)
 
 #     saccade amplitude: lmer
