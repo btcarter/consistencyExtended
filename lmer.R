@@ -5,31 +5,24 @@
 #          and if there is a difference between sessions and conditions.
 
 
-###############
-# ENVIRONMENT #
-###############
+####ENVIRONMENT ####
 
 # check for required packaages are install them if necessary
-#potential list.of.packages <- c("psych","reshape2","car","lme4","ggplot2","tidyverse","data.table","dplyr","lmerTest")          # list of potential packages
-list.of.packages <- c("reshape2","Hmsic","lme4","lmerTest")          # list of packages
+list.of.packages <- c("lme4","lmerTest")                                                                              # list of packages
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]                           # compare the list to the installed packages list and add missing packages to new list
 if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)                                          # install missing packages
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
 
 
-#######################
-# VARIABLES AND PATHS #
-#######################
+#### VARIABLES AND PATHS ####
 
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 reports <- c("ProsaccadeFixationReport.txt","AntisaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
-sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                               # a path to the sessions list
+sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                  # a path to the sessions list
 
-#################
-# PREPROCESSING #
-#################
+#### PREPROCESSING ####
 
 # combine reports into one data.frame and add a session variable.
 #   function to read report, correct errors and add to data frame
@@ -95,13 +88,17 @@ for (report in reports) {
   df.all <- rbind(df.all,preprocessed)
 }
 
-##################################
-# MADAGASCAR - Playing with LMER #
-##################################
+#### MADAGASCAR - Playing with LMERs ####
 
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
-fix.dur = lmer(CURRENT_FIX_DURATION ~ CONDITION + (1 |SUBJECT) + TASK + SESSION, data = df.all)
+fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 |SUBJECT) + SESSION + CONDITION, data = df.all)
 summary(fix.dur)
 
 #     saccade amplitude: lmer
+sac.amp = lmer(NEXT_SAC_AMPLITUDE ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data = df.all)
+summary(sac.amp)
+
+#     saccade peak velocity: lmer
+sac.vel = lmer(NEXT_SAC_PEAK_VELOCITY ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data=df.all)
+summary(sac.vel)
