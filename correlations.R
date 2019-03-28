@@ -5,9 +5,7 @@
 #          and if there is a difference between sessions and conditions.
 
 
-###############
-# ENVIRONMENT #
-###############
+##### ENVIRONMENT #####
 
 # check for required packaages are install them if necessary
 list.of.packages <- c("reshape2","Hmsic")                                                                             # list of packages
@@ -16,9 +14,7 @@ if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)    
 lapply(list.of.packages,library,character.only = TRUE)                                                                # load packages
 
 
-######
-# VARIABLES AND PATHS #
-######
+###### VARIABLES AND PATHS #####
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 reports <- c("AntisaccadeFixationReport.txt","ProsaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")        # names of the fixation reports as an array
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                            # a path to the output destination
@@ -34,12 +30,11 @@ pro <- subset(saccades, task == "prosaccade")                                   
 write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntisaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
 write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProsaccadeFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
-#####
-# PREPROCESSING
+##### PREPROCESSING #####
 # This will clean the data by fixing broken participant labels, remove NA values, remove participants with less than 4 sessions,
 # a session variable for each fixation report listed about in the reports array, and compute summary statistics for each participant.
 # This is then saved as an object labeled <task>_stats and can be output as a file.
-#####
+
 
 # a preprocessing function
 participant.stats <- function(z,correction.matrix,sessions.matrix) {
@@ -129,10 +124,8 @@ for (i in reports) {
 
 write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.names = FALSE)            # write data.frame to a csv in the output directory, omit row names
 
-######
-# SIMPLE MATHS and WIZARDRY
+###### SIMPLE MATHS and WIZARDRY ######
 # This section preforms all the correlational tests of interest to our study.
-######
 
 # melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
 simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                                                                               # for some reason the Subject column needs to be turned into a numeric (why is that not the default assumption).
