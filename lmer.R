@@ -5,7 +5,7 @@
 #          and if there is a difference between sessions and conditions.
 
 
-####ENVIRONMENT ####
+#### ENVIRONMENT ####
 
 # check for required packaages are install them if necessary
 list.of.packages <- c("lme4","lmerTest")                                                                              # list of packages
