@@ -128,7 +128,7 @@ write.csv(simple.stats.df,paste(output.dir,"taskStats",".csv",sep = ""),row.name
 # This section preforms all the correlational tests of interest to our study.
 
 # melt everything so there is just one line per participant, with variables annotated for session and dcast it (see legacy scripts)
-simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                                                                               # for some reason the Subject column needs to be turned into a numeric (why is that not the default assumption).
+simple.stats.df$Subject <- as.numeric(simple.stats.df$Subject)                                                                               # for some reason the Subject column needs to be turned into a numeric (why is that not the default assumption?).
 hot.cheddar.and.rhye <- melt(simple.stats.df, id=c("Subject","Session","Task"))                                                              # rearranges the stats so variables are now contained in a single column
 tuna.melt <- dcast(hot.cheddar.and.rhye, Subject ~ Session + Task + variable)                                                                # rearranges data so data is there is one line per subject
 
