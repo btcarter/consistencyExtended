@@ -92,7 +92,7 @@ for (report in reports) {
 
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
-fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 |SUBJECT) + SESSION + CONDITION, data = df.all)
+fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 | SUBJECT) + (TASK || CONDITION), data = df.all)
 summary(fix.dur)
 
 #     saccade amplitude: lmer
