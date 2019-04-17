@@ -90,19 +90,15 @@ for (report in reports) {
 
 #### MADAGASCAR - Playing with LMERs ####
 
-# #   is there a difference between conditions and what does that look like?
-# #     fixation duration: lmer
-# fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 | SUBJECT) + (TASK || CONDITION), data = df.all)
-# summary(fix.dur)
-# 
-# #     saccade amplitude: lmer
-# sac.amp = lmer(NEXT_SAC_AMPLITUDE ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data = df.all)
-# summary(sac.amp)
-# 
-# #     saccade peak velocity: lmer
-# sac.vel = lmer(NEXT_SAC_PEAK_VELOCITY ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data=df.all)
-# summary(sac.vel)
+#   is there a difference between conditions and what does that look like?
+#     fixation duration: lmer
+fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 | SUBJECT) + (TASK | CONDITION), data = df.all)
+summary(fix.dur)
 
-#   Can we predict readnging?
-reading =  lmer(TASK ~ CURRENT_FIX_DURATION + (1 |SUBJECT) + (CURRENT_FIX_DURATION || SUBJECT) + CONDITION, data = df.all)
-summary(reading)
+#     saccade amplitude: lmer
+sac.amp = lmer(NEXT_SAC_AMPLITUDE ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data = df.all)
+summary(sac.amp)
+
+#     saccade peak velocity: lmer
+sac.vel = lmer(NEXT_SAC_PEAK_VELOCITY ~ TASK + (1 | SUBJECT) + SESSION + CONDITION, data=df.all)
+summary(sac.vel)
