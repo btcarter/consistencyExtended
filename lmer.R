@@ -17,15 +17,22 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 #### VARIABLES AND PATHS ####
 
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-reports <- c("ProsaccadeFixationReport.txt","AntisaccadeFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")     # names of the fixation reports as an array
+reports <- c("ProFixationReport.txt","AntiFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")                   # names of the fixation reports as an array
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                  # a path to the sessions list
 
 #### PREPROCESSING ####
 
-# combine reports into one data.frame and add a session variable.
-#   function to read report, correct errors and add to data frame
+# split Antisaccade fixation report into two, one for antisaccades and one for prosaccades
+saccades <- paste(report.dir,"AntiSaccadeFixationReport.txt",sep="")
+saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
+anti <- subset(saccades, task == "antisaccade")                                                                                                                  # make antisaccade report
+pro <- subset(saccades, task == "prosaccade")                                                                                                                    # make prosaccade report
+write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntiFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
+write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
+
+# function to read report, correct errors participant naming conventions, remove participants who did not complete the study, and add a task variable
 preprocessing <- function(report,corrections,sessions) {
   corrections = correction.matrix
   sessions = sessions.matrix
@@ -71,28 +78,44 @@ preprocessing <- function(report,corrections,sessions) {
   # add task variable
   original$TASK = gsub("(\\w+)FixationReport.txt","\\1",report)
   
-  # select and order variables of interest
-  variables = c("RECORDING_SESSION_LABEL","SUBJECT","CONDITION","SESSION","TASK","CURRENT_FIX_DURATION","NEXT_SAC_DURATION","NEXT_SAC_AVG_VELOCITY","NEXT_SAC_PEAK_VELOCITY","NEXT_SAC_CONTAINS_BLINK","NEXT_SAC_AMPLITUDE")
-  original = original[variables]
-  
   # return output
   return(original)
 }
 
-# start the data.frame
-df.all <- data.frame()
+#### SUMMARY STATISTICS FUNCTIONS ####
 
+#   saccade latencey (i.e. how long till they looked?)
+latency <- function(DATAFRAME) {
+  DATAFRAME <-Pro
+  DATAFRAME[["NEXT_SAC_LATENCY"]] = DATAFRAME[["IP_START_TIME"]]-DATAFRAME[["NEXT_SAC_START_TIME"]]
+}
+
+#   saccade accuracy (i.e. did they look in the right place?)
+
+
+#   search - accuracy (i.e. are they looking at the target?)
+
+
+#   search - initiation time (how long till they started searching?)
+
+#   search - verification time (how long did it take to press the button?)
+
+
+#### EXECUTION ####
 # apply preprocessing function to list of fixation reports, adding them to a single data.frame
 for (report in reports) {
-  preprocessed <- preprocessing(report,correction.matrix,sessions.matrix)
-  df.all <- rbind(df.all,preprocessed)
+  assign(gsub("(\\w+)FixationReport.txt","\\1",report),preprocessing(report,correction.matrix,sessions.matrix))
 }
+
+
+
+
 
 #### MADAGASCAR - Playing with LMERs ####
 
 #   is there a difference between conditions and what does that look like?
 #     fixation duration: lmer
-fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + (1 | SUBJECT) + (TASK | CONDITION), data = df.all)
+fix.dur = lmer(CURRENT_FIX_DURATION ~ TASK + CONDITION + SUBJECT + (1|SUBJECT/TASK), data = df.all)
 summary(fix.dur)
 
 #     saccade amplitude: lmer
