@@ -17,7 +17,8 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 #### VARIABLES AND PATHS ####
 
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-reports <- c("ProFixationReport.txt","AntiFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")                   # names of the fixation reports as an array
+fixationReports <- c("ProFixationReport.txt","AntiFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")                   # names of the fixation reports as an array
+latencyReport <- "Saccade Latency - Antisaccade Task.txt"
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                  # a path to the sessions list
@@ -33,7 +34,7 @@ write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntiFixatio
 write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
 
 # function to read report, correct errors participant naming conventions, remove participants who did not complete the study, and add a task variable
-preprocessing <- function(report,corrections,sessions) {
+preprocessing <- function(report,report.dir,corrections,sessions) {
   corrections = correction.matrix
   sessions = sessions.matrix
   a = paste(report.dir,report,sep="")
@@ -85,29 +86,31 @@ preprocessing <- function(report,corrections,sessions) {
 #### SUMMARY STATISTICS FUNCTIONS ####
 
 #   saccade latencey (i.e. how long till they looked?)
-latency <- function(DATAFRAME) {
-  DATAFRAME <-Pro
-  DATAFRAME[["NEXT_SAC_LATENCY"]] = DATAFRAME[["IP_START_TIME"]]-DATAFRAME[["NEXT_SAC_START_TIME"]]
+latency <- function(report,directory,corrctions,sessions) {
+  DATA <- read.csv(paste(report,directory,sep = ""),header=TRUE,sep="\t",na.strings=".")
+  preprocessing(DATA,corrections,sessions)
+  DATA <- subset(DATA, CURRENT_FIX_INDEX==1)
+  return(DATA)
 }
 
-#   saccade accuracy (i.e. did they look in the right place?)
-
-
-#   search - accuracy (i.e. are they looking at the target?)
-
-
 #   search - initiation time (how long till they started searching?)
+
 
 #   search - verification time (how long did it take to press the button?)
 
 
-#### EXECUTION ####
+#### CREATE SUMMARY STATS MATRIX ####
 # apply preprocessing function to list of fixation reports, adding them to a single data.frame
-for (report in reports) {
-  assign(gsub("(\\w+)FixationReport.txt","\\1",report),preprocessing(report,correction.matrix,sessions.matrix))
+for (report in fixationReports) {
+  assign(gsub("(\\w+)FixationReport.txt","\\1",report),preprocessing(report,report.dir,correction.matrix,sessions.matrix))
 }
 
+assign(LATENCY,preprocessing(paste(latencyReport,report.dir,sep=""),correction.matrix,sessions.matrix))     # preprocess latency report
 
+# PULL SACCADE ACCURACY FROM DATA$NEXT_SAC_END_INTEREST_AREA_LABEL
+
+# search initiation time
+# search verification time
 
 
 
