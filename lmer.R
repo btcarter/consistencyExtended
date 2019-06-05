@@ -17,8 +17,9 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 #### VARIABLES AND PATHS ####
 
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
-fixationReports <- c("ProFixationReport.txt","AntiFixationReport.txt","SearchFixationReport.txt","ReadingFixationReport.txt")                   # names of the fixation reports as an array
-latencyReport <- "Saccade Latency - Antisaccade Task.txt"
+readingReport <- "ReadingFixationReport.txt"                                                                                            # name of the reading fixation report
+latencyReport <- "Saccade Latency - Antisaccade Task.txt"                                                                               # name of saccade latency report from Antisaccade task
+searchReport <- "SearchFixationReport.txt"                                                                                              # name of search task fixation report
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                  # a path to the sessions list
@@ -26,12 +27,19 @@ sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantLis
 #### PREPROCESSING ####
 
 # split Antisaccade fixation report into two, one for antisaccades and one for prosaccades
-saccades <- paste(report.dir,"AntiSaccadeFixationReport.txt",sep="")
-saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
-anti <- subset(saccades, task == "antisaccade")                                                                                                                  # make antisaccade report
-pro <- subset(saccades, task == "prosaccade")                                                                                                                    # make prosaccade report
-write.table(anti, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/AntiFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)      # write it out as a .tab
-write.table(pro, file = "~/Box/LukeLab/Caffeine/eyelinkData/reports/ProFixationReport.txt",sep = "\t",na = ".",col.names = TRUE,row.names = FALSE)        # write it out as a .tab
+antisaccades <- function(report,directory) {
+  saccades <- paste(report.dir,latencyReport,sep="")
+  saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
+  anti <- subset(saccades, task == "antisaccade")
+  return(anti)
+}
+
+prosaccades <- function(report,directory) {
+  saccades <- paste(report.dir,latencyReport,sep="")
+  saccades <- read.table(saccades,header=TRUE,sep="\t",na.strings=".",dec=".",fill=TRUE)
+  pro <- subset(saccades, task == "prosaccade")
+  return(pro)
+}
 
 # function to read report, correct errors participant naming conventions, remove participants who did not complete the study, and add a task variable
 preprocessing <- function(report,report.dir,corrections,sessions) {
@@ -85,21 +93,57 @@ preprocessing <- function(report,report.dir,corrections,sessions) {
 
 #### SUMMARY STATISTICS FUNCTIONS ####
 
-#   saccade latencey (i.e. how long till they looked?)
-latency <- function(report,directory,corrctions,sessions) {
-  DATA <- read.csv(paste(report,directory,sep = ""),header=TRUE,sep="\t",na.strings=".")
-  preprocessing(DATA,corrections,sessions)
-  DATA <- subset(DATA, CURRENT_FIX_INDEX==1)
+#   anti/prosaccade - saccade latencey (i.e. how long till they looked?)
+latencyMean <- function(report,directory,corrctions,sessions) {
+  DATA <- read.csv(paste(directory,report,sep = ""),header=TRUE,sep="\t",na.strings=".")
+  DATA <- preprocessing(DATA,corrections,sessions)
+  for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
+    DATA[["MEAN_LATENCY"]][DATA[["RECORDING_SESSION_LABEL"]] == participant] <-
+      mean(DATA[["CURRENT_FIX_DURATION"]][DATA[["RECORDING_SESSION_LABEL"]]==participant & DATA[["CURRENT_FIX_INDEX"]] == 1])
+  }
   return(DATA)
 }
 
-#   search - initiation time (how long till they started searching?)
+#   search - initiation time (how long till they started searching? 
+#     This is equal to the duration of the first fixation of a trial in the search report)
+initiationMean <- function(report,directory,correction,sessions) {
+  DATA <- read.table(paste(directory,report,sep=""),header=TRUE,sep="\t",na.strings=".")
+  DATA <- preprocessing(DATA,corrections,sessions)
+  for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
+    DATA[["MEAN_INIT_TIME"]][DATA[["RECORDING_SESSION_LABEL"]] == participant] <-
+      mean(DATA[["CURRENT_FIX_DURATION"]][DATA[["RECORDING_SESSION_LABEL"]] == participant & DATA[["CURRENT_FIX_INDEX"]] == 1])
+  }
+  return(DATA)
+}
+
+#   search - accuracy (did they look in the right place?)
+#     This is equal to the % of saccades that fall within the interest area of a trial and are labeled Target_Object_4deg.
+accuracyMean <- function(report,directory,correction,sessions) {
+  DATA <- read.table(paste(directory,report,sep=""),header=TRUE,sep="\t",na.strings=".")
+  DATA <- preprocessing(DATA,corrections,sessions)
+  for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
+    for (trial in unique(DATA[["TRIAL_INDEX"]])) {
+      totalFixations <-
+        length(DATA[["RECORDING_SESSION_LABEL"]][DATA[["RECORDING_SESSION_LABEL"]] == participant & DATA[["TRIAL_INDEX"]]==trial])
+      correctFixations <-
+        length(DATA[["RECORDING_SESSION_LABEL"]][DATA[["RECORDING_SESSION_LABEL"]] == participant & 
+                                                   DATA[["TRIAL_INDEX"]]==trial &
+                                                   DATA[["CURRENT_FIX_INTEREST_AREA_LABEL"]]=="Target_Object_4deg"])
+      DATA[["MEAN_ACCUR"]][DATA[["RECORDING_SESSION_LABEL"]]==participant & DATA[["TRIAL_INDEX"]]==trial] <-
+        correctFixations / totalFixations
+    }
+  }
+}
 
 
-#   search - verification time (how long did it take to press the button?)
+#   search - verification time (how long did it take to press the button?
+#     This is equal to the time from the start of the first fixation in the interest area to the time of a button press.)
+
 
 
 #### CREATE SUMMARY STATS MATRIX ####
+
+
 # apply preprocessing function to list of fixation reports, adding them to a single data.frame
 for (report in fixationReports) {
   assign(gsub("(\\w+)FixationReport.txt","\\1",report),preprocessing(report,report.dir,correction.matrix,sessions.matrix))
@@ -107,7 +151,7 @@ for (report in fixationReports) {
 
 assign(LATENCY,preprocessing(paste(latencyReport,report.dir,sep=""),correction.matrix,sessions.matrix))     # preprocess latency report
 
-# PULL SACCADE ACCURACY FROM DATA$NEXT_SAC_END_INTEREST_AREA_LABEL
+# PULL SACCADE ACCURACY FROM DATA$CURRENT_FIX_INTEREST_AREA_LABEL
 
 # search initiation time
 # search verification time
