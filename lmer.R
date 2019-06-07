@@ -20,6 +20,7 @@ report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 readingReport <- "ReadingFixationReport.txt"                                                                                            # name of the reading fixation report
 latencyReport <- "Saccade Latency - Antisaccade Task.txt"                                                                               # name of saccade latency report from Antisaccade task
 searchReport <- "SearchFixationReport.txt"                                                                                              # name of search task fixation report
+searchRTReport <- "Search RT - Trial Report.txt"                                                                                        # name of search reaction time report
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
 sessions.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/participantList.txt"                                                  # a path to the sessions list
@@ -97,11 +98,12 @@ preprocessing <- function(report,report.dir,corrections,sessions) {
 latencyMean <- function(report,directory,corrctions,sessions) {
   DATA <- read.csv(paste(directory,report,sep = ""),header=TRUE,sep="\t",na.strings=".")
   DATA <- preprocessing(DATA,corrections,sessions)
+  DATA <- DATA[,c("RECORDING_SESSION_LABEL","CURRENT_FIX_INDEX","CURRENT_FIX_DURATION")]
   for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
     DATA[["MEAN_LATENCY"]][DATA[["RECORDING_SESSION_LABEL"]] == participant] <-
       mean(DATA[["CURRENT_FIX_DURATION"]][DATA[["RECORDING_SESSION_LABEL"]]==participant & DATA[["CURRENT_FIX_INDEX"]] == 1])
   }
-  return(DATA)
+  return(DATA[,c("RECORDING_SESSION_LABEL","MEAN_LATENCY")])
 }
 
 #   search - initiation time (how long till they started searching? 
@@ -109,11 +111,12 @@ latencyMean <- function(report,directory,corrctions,sessions) {
 initiationMean <- function(report,directory,correction,sessions) {
   DATA <- read.table(paste(directory,report,sep=""),header=TRUE,sep="\t",na.strings=".")
   DATA <- preprocessing(DATA,corrections,sessions)
+  DATA <- DATA[,c("RECORDING_SESSION_LABEL","CURRENT_FIX_INDEX","CURRENT_FIX_DURATION")]
   for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
-    DATA[["MEAN_INIT_TIME"]][DATA[["RECORDING_SESSION_LABEL"]] == participant] <-
+    DATA[["MEAN_SEARCH_INIT"]][DATA[["RECORDING_SESSION_LABEL"]] == participant] <-
       mean(DATA[["CURRENT_FIX_DURATION"]][DATA[["RECORDING_SESSION_LABEL"]] == participant & DATA[["CURRENT_FIX_INDEX"]] == 1])
   }
-  return(DATA)
+  return(DATA[,c("RECORDING_SESSION_LABEL","MEAN_SEARCH_INIT")])
 }
 
 #   search - accuracy (did they look in the right place?)
@@ -121,6 +124,7 @@ initiationMean <- function(report,directory,correction,sessions) {
 accuracyMean <- function(report,directory,correction,sessions) {
   DATA <- read.table(paste(directory,report,sep=""),header=TRUE,sep="\t",na.strings=".")
   DATA <- preprocessing(DATA,corrections,sessions)
+  DATA <- DATA[,c("RECORDING_SESSION_LABEL","TRIAL_INDEX","CURRENT_FIX_INTEREST_AREA_LABEL")]
   for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
     for (trial in unique(DATA[["TRIAL_INDEX"]])) {
       totalFixations <-
@@ -133,11 +137,22 @@ accuracyMean <- function(report,directory,correction,sessions) {
         correctFixations / totalFixations
     }
   }
+  return()
 }
 
 
 #   search - verification time (how long did it take to press the button?
-#     This is equal to the time from the start of the first fixation in the interest area to the time of a button press.)
+#     Use the searchRT for this
+verificationTime <- function(report,directory,correction,sessions) {
+  DATA <- read.table(paste(directory,report,sep=""),header=TRUE,sep="\t",na.strings=".")
+  DATA <- preprocessing(DATA,corrections,sessions)
+  DATA <- DATA[,c("RECORDING_SESSION_LABEL","REACTION_TIME")]
+  for (participant in unique(DATA[["RECORDING_SESSION_LABEL"]])) {
+    DATA[["MEAN_VER_TIME"]][DATA[["RECORDING_SESSION_LABEL"]]==participant] <-
+      mean(DATA[["REACTION_TIME"]][DATA[["RECORDING_SESSION_LABEL"]]==participant])
+  }
+  return(DATA[,c("RECORDING_SESSION_LABEL","MEAN_VER_TIME")])
+}
 
 
 
@@ -154,6 +169,7 @@ assign(LATENCY,preprocessing(paste(latencyReport,report.dir,sep=""),correction.m
 # PULL SACCADE ACCURACY FROM DATA$CURRENT_FIX_INTEREST_AREA_LABEL
 
 # search initiation time
+
 # search verification time
 
 
