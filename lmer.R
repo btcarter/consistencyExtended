@@ -19,7 +19,7 @@ lapply(list.of.packages,library,character.only = TRUE)                          
 report.dir <- "~/Box/LukeLab/Caffeine/eyelinkData/reports/"
 readingReport <- "ReadingFixationReport.txt"                                                                                            # name of the reading fixation report
 latencyReport <- "Saccade Latency - Antisaccade Task.txt"                                                                               # name of saccade latency report from Antisaccade task
-searchReport <- "SearchFixationReport.txt"                                                                                              # name of search task fixation report
+searchFixReport <- "SearchFixationReport.txt"                                                                                              # name of search task fixation report
 searchRTReport <- "Search RT - Trial Report.txt"                                                                                        # name of search reaction time report
 output.dir <- "~/Box/LukeLab/Caffeine/results/"                                                                                         # a path to the output destination
 correction.matrix <- "~/Dropbox/Lab data & Papers/analyses/caffeine/subjectCorrections.txt"                                             # this is the matrix containing all the errors and all the corrections
@@ -154,7 +154,13 @@ verificationTime <- function(report,directory,correction,sessions) {
   return(DATA[,c("RECORDING_SESSION_LABEL","MEAN_VER_TIME")])
 }
 
-
+#   combine a list of dataframes into a single dataframe by recording_session_label (maybe try do.call if merge doesn't)
+summaryStats <- function(LIST,destination) {
+  summaryDF <- data.frame()
+  df.number <- length(LIST)
+  lapply(LIST,merge(destination,by="RECORDING_SESSION_LABEL"))
+  return(summaryDF)
+}
 
 #### CREATE SUMMARY STATS MATRIX ####
 
@@ -171,6 +177,9 @@ assign(LATENCY,preprocessing(paste(latencyReport,report.dir,sep=""),correction.m
 # search initiation time
 
 # search verification time
+
+
+# combine these stats into a single dataframe. requires stat dfs to be in a list
 
 
 
